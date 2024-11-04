@@ -11,7 +11,6 @@ import com.java3y.austin.common.domain.TaskInfo;
 import com.java3y.austin.common.dto.model.MiniProgramContentModel;
 import com.java3y.austin.common.enums.ChannelType;
 import com.java3y.austin.handler.handler.BaseHandler;
-import com.java3y.austin.handler.handler.Handler;
 import com.java3y.austin.support.utils.AccountUtils;
 import com.java3y.austin.support.utils.LogUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -27,10 +26,11 @@ import java.util.Set;
 /**
  * @author sunql
  * 微信小程序发送订阅消息
+ * https://developers.weixin.qq.com/miniprogram/dev/OpenApiDoc/mp-message-management/subscribe-message/deleteMessageTemplate.html
  */
 @Component
 @Slf4j
-public class MiniProgramAccountHandler extends BaseHandler implements Handler {
+public class MiniProgramAccountHandler extends BaseHandler{
     @Autowired
     private AccountUtils accountUtils;
     @Autowired
@@ -61,6 +61,9 @@ public class MiniProgramAccountHandler extends BaseHandler implements Handler {
 
     /**
      * 组装发送模板信息参数
+     * @param receiver 接收信息者
+     * @param contentModel 消息参数信息
+     * @return
      */
     private WxMaSubscribeMessage assembleReq(Set<String> receiver, MiniProgramContentModel contentModel) {
         return WxMaSubscribeMessage.builder()
@@ -73,7 +76,7 @@ public class MiniProgramAccountHandler extends BaseHandler implements Handler {
 
     /**
      * 构建订阅消息参数
-     *
+     * @param data 模板参数
      * @returnp
      */
     private List<WxMaSubscribeMessage.MsgData> getWxMaTemplateData(Map<String, String> data) {
@@ -83,6 +86,11 @@ public class MiniProgramAccountHandler extends BaseHandler implements Handler {
     }
 
 
+    /**
+     * 微信小程序发送订阅消息 不支持撤回
+     * https://developers.weixin.qq.com/miniprogram/dev/OpenApiDoc/mp-message-management/subscribe-message/deleteMessageTemplate.html
+     * @param recallTaskInfo
+     */
     @Override
     public void recall(RecallTaskInfo recallTaskInfo) {
 

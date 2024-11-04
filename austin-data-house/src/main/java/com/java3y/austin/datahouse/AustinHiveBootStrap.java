@@ -8,7 +8,7 @@ import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.table.catalog.hive.HiveCatalog;
 
 /**
- * flink启动类
+ * hive启动类
  * <p>
  * 接受Kafka的消息 写入hive表中
  *
@@ -74,7 +74,7 @@ public class AustinHiveBootStrap {
 
         // 3. 将kafka_source 数据写入到kafka_sink 完成
         tableEnv.getConfig().setSqlDialect(SqlDialect.DEFAULT);
-        tableEnv.executeSql("INSERT INTO " + DataHouseConstant.CATALOG_DEFAULT_DATABASE + "." + DataHouseConstant.KAFKA_SINK_TABLE_NAME + " SELECT ids,state,businessId,logTimestamp FROM " + DataHouseConstant.CATALOG_DEFAULT_DATABASE + "." + DataHouseConstant.KAFKA_SOURCE_TABLE_NAME + "");
+        tableEnv.executeSql("INSERT INTO " + DataHouseConstant.CATALOG_DEFAULT_DATABASE + "." + DataHouseConstant.KAFKA_SINK_TABLE_NAME + " SELECT ids,state,businessId,logTimestamp FROM " + DataHouseConstant.CATALOG_DEFAULT_DATABASE + "." + DataHouseConstant.KAFKA_SOURCE_TABLE_NAME);
 
     }
 }

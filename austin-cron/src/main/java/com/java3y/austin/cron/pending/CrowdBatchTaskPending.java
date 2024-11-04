@@ -2,7 +2,7 @@ package com.java3y.austin.cron.pending;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.map.MapUtil;
-import cn.hutool.core.util.StrUtil;
+import cn.hutool.core.text.StrPool;
 import com.google.common.collect.Lists;
 import com.java3y.austin.common.constant.AustinConstant;
 import com.java3y.austin.cron.config.CronAsyncThreadPoolConfig;
@@ -42,7 +42,7 @@ public class CrowdBatchTaskPending extends AbstractLazyPending<CrowdInfoVo> {
 
     public CrowdBatchTaskPending() {
         PendingParam<CrowdInfoVo> pendingParam = new PendingParam<>();
-        pendingParam.setQueue(new LinkedBlockingQueue(PendingConstant.QUEUE_SIZE))
+        pendingParam.setQueue(new LinkedBlockingQueue<>(PendingConstant.QUEUE_SIZE))
                 .setTimeThreshold(PendingConstant.TIME_THRESHOLD)
                 .setNumThreshold(AustinConstant.BATCH_RECEIVER_SIZE)
                 .setExecutorService(CronAsyncThreadPoolConfig.getConsumePendingThreadPool());
@@ -61,7 +61,7 @@ public class CrowdBatchTaskPending extends AbstractLazyPending<CrowdInfoVo> {
                 paramMap.put(vars, receiver);
             } else {
                 String newReceiver = StringUtils.join(new String[]{
-                        paramMap.get(vars), receiver}, StrUtil.COMMA);
+                        paramMap.get(vars), receiver}, StrPool.COMMA);
                 paramMap.put(vars, newReceiver);
             }
         }

@@ -1,6 +1,6 @@
 package com.java3y.austin.handler.receiver.kafka;
 
-import cn.hutool.core.util.StrUtil;
+import cn.hutool.core.text.StrPool;
 import com.java3y.austin.handler.utils.GroupIdMappingUtils;
 import com.java3y.austin.support.constans.MessageQueuePipeline;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +39,7 @@ public class ReceiverStart {
     /**
      * 获取得到所有的groupId
      */
-    private static List<String> groupIds = GroupIdMappingUtils.getAllGroupIds();
+    private static final List<String> GROUP_IDS = GroupIdMappingUtils.getAllGroupIds();
     /**
      * 下标(用于迭代groupIds位置)
      */
@@ -56,9 +56,9 @@ public class ReceiverStart {
     public static KafkaListenerAnnotationBeanPostProcessor.AnnotationEnhancer groupIdEnhancer() {
         return (attrs, element) -> {
             if (element instanceof Method) {
-                String name = ((Method) element).getDeclaringClass().getSimpleName() + StrUtil.DOT + ((Method) element).getName();
+                String name = ((Method) element).getDeclaringClass().getSimpleName() + StrPool.DOT + ((Method) element).getName();
                 if (RECEIVER_METHOD_NAME.equals(name)) {
-                    attrs.put("groupId", groupIds.get(index++));
+                    attrs.put("groupId", GROUP_IDS.get(index++));
                 }
             }
             return attrs;
@@ -70,7 +70,7 @@ public class ReceiverStart {
      */
     @PostConstruct
     public void init() {
-        for (int i = 0; i < groupIds.size(); i++) {
+        for (int i = 0; i < GROUP_IDS.size(); i++) {
             context.getBean(Receiver.class);
         }
     }
@@ -84,14 +84,15 @@ public class ReceiverStart {
     @Bean
     public ConcurrentKafkaListenerContainerFactory filterContainerFactory(@Value("${austin.business.tagId.key}") String tagIdKey,
                                                                           @Value("${austin.business.tagId.value}") String tagIdValue) {
-        ConcurrentKafkaListenerContainerFactory factory = new ConcurrentKafkaListenerContainerFactory();
+        ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory);
         factory.setAckDiscarded(true);
 
         factory.setRecordFilterStrategy(consumerRecord -> {
             if (Optional.ofNullable(consumerRecord.value()).isPresent()) {
                 for (Header header : consumerRecord.headers()) {
-                    if (header.key().equals(tagIdKey) && new String(header.value()).equals(new String(tagIdValue.getBytes(StandardCharsets.UTF_8)))) {
+                    if (header.key().equals(tagIdKey) &&
+                            new String(header.value(), StandardCharsets.UTF_8).equals(tagIdValue)) {
                         return false;
                     }
                 }

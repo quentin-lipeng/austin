@@ -18,7 +18,6 @@ import com.java3y.austin.handler.domain.push.getui.BatchSendPushParam;
 import com.java3y.austin.handler.domain.push.getui.SendPushParam;
 import com.java3y.austin.handler.domain.push.getui.SendPushResult;
 import com.java3y.austin.handler.handler.BaseHandler;
-import com.java3y.austin.handler.handler.Handler;
 import com.java3y.austin.support.utils.AccessTokenUtils;
 import com.java3y.austin.support.utils.AccountUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -31,13 +30,15 @@ import java.util.Set;
  * 通知栏消息发送处理
  * <p>
  * (目前具体的实现是个推服务商，安卓端已验证)
+ * 个推：https://docs.getui.com/getui/start/devcenter/
  *
  * @author 3y
  */
 @Component
 @Slf4j
-public class PushHandler extends BaseHandler implements Handler {
+public class PushHandler extends BaseHandler{
 
+    private static final String HEADER_TOKEN_NAME = "token";
     @Autowired
     private AccountUtils accountUtils;
     @Autowired
@@ -83,12 +84,11 @@ public class PushHandler extends BaseHandler implements Handler {
     private String singlePush(PushParam pushParam) {
         String url = SendChanelUrlConstant.GE_TUI_BASE_URL + pushParam.getAppId() + SendChanelUrlConstant.GE_TUI_SINGLE_PUSH_PATH;
         SendPushParam sendPushParam = assembleParam((PushContentModel) pushParam.getTaskInfo().getContentModel(), pushParam.getTaskInfo().getReceiver());
-        String body = HttpRequest.post(url).header(Header.CONTENT_TYPE.getValue(), ContentType.JSON.getValue())
-                .header("token", pushParam.getToken())
+        return HttpRequest.post(url).header(Header.CONTENT_TYPE.getValue(), ContentType.JSON.getValue())
+                .header(HEADER_TOKEN_NAME, pushParam.getToken())
                 .body(JSON.toJSONString(sendPushParam))
                 .timeout(2000)
                 .execute().body();
-        return body;
     }
 
 
@@ -105,12 +105,11 @@ public class PushHandler extends BaseHandler implements Handler {
                 .taskId(taskId)
                 .isAsync(true)
                 .audience(BatchSendPushParam.AudienceVO.builder().cid(pushParam.getTaskInfo().getReceiver()).build()).build();
-        String body = HttpRequest.post(url).header(Header.CONTENT_TYPE.getValue(), ContentType.JSON.getValue())
-                .header("token", pushParam.getToken())
+        return HttpRequest.post(url).header(Header.CONTENT_TYPE.getValue(), ContentType.JSON.getValue())
+                .header(HEADER_TOKEN_NAME, pushParam.getToken())
                 .body(JSON.toJSONString(batchSendPushParam))
                 .timeout(2000)
                 .execute().body();
-        return body;
     }
 
 
@@ -126,7 +125,7 @@ public class PushHandler extends BaseHandler implements Handler {
         String taskId = "";
         try {
             String body = HttpRequest.post(url).header(Header.CONTENT_TYPE.getValue(), ContentType.JSON.getValue())
-                    .header("token", pushParam.getToken())
+                    .header(HEADER_TOKEN_NAME, pushParam.getToken())
                     .body(JSON.toJSONString(param))
                     .timeout(2000)
                     .execute().body();
@@ -157,6 +156,12 @@ public class PushHandler extends BaseHandler implements Handler {
     }
 
 
+    /**
+     * 对正处于推送状态 未接收的消息停止下发（只支持批量推和群推任务）
+     * 【未实现】
+     * https://docs.getui.com/getui/server/rest_v2/push/
+     * @param recallTaskInfo
+     */
     @Override
     public void recall(RecallTaskInfo recallTaskInfo) {
 

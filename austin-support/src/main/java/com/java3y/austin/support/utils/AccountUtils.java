@@ -45,12 +45,12 @@ public class AccountUtils {
     /**
      * 消息的小程序/微信服务号账号
      */
-    private ConcurrentMap<ChannelAccount, WxMpService> officialAccountServiceMap = new ConcurrentHashMap<>();
-    private ConcurrentMap<ChannelAccount, WxMaService> miniProgramServiceMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<ChannelAccount, WxMpService> officialAccountServiceMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<ChannelAccount, WxMaService> miniProgramServiceMap = new ConcurrentHashMap<>();
 
     @Bean
     public RedisTemplateWxRedisOps redisTemplateWxRedisOps() {
-        return new RedisTemplateWxRedisOps(redisTemplate);
+        return new RedisTemplateWxRedisOps(this.redisTemplate);
     }
 
     /**
@@ -119,7 +119,7 @@ public class AccountUtils {
      */
     public WxMpService initOfficialAccountService(WeChatOfficialAccount officialAccount) {
         WxMpService wxMpService = new WxMpServiceImpl();
-        WxMpRedisConfigImpl config = new WxMpRedisConfigImpl(redisTemplateWxRedisOps(), ChannelType.ENTERPRISE_WE_CHAT.getAccessTokenPrefix());
+        WxMpRedisConfigImpl config = new WxMpRedisConfigImpl(redisTemplateWxRedisOps(), ChannelType.OFFICIAL_ACCOUNT.getAccessTokenPrefix());
         config.setAppId(officialAccount.getAppId());
         config.setSecret(officialAccount.getSecret());
         config.setToken(officialAccount.getToken());

@@ -1,6 +1,6 @@
 package com.java3y.austin.cron.handler;
 
-import cn.hutool.core.util.StrUtil;
+import cn.hutool.core.text.CharSequenceUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.google.common.base.Throwables;
@@ -14,7 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
+import java.util.Collections;
 
 
 /**
@@ -46,10 +46,10 @@ public class NightShieldLazyPendingHandler {
         SupportThreadPoolConfig.getPendingSingleThreadPool().execute(() -> {
             while (redisUtils.lLen(NIGHT_SHIELD_BUT_NEXT_DAY_SEND_KEY) > 0) {
                 String taskInfo = redisUtils.lPop(NIGHT_SHIELD_BUT_NEXT_DAY_SEND_KEY);
-                if (StrUtil.isNotBlank(taskInfo)) {
+                if (CharSequenceUtil.isNotBlank(taskInfo)) {
                     try {
-                        kafkaTemplate.send(topicName, JSON.toJSONString(Arrays.asList(JSON.parseObject(taskInfo, TaskInfo.class))
-                                , new SerializerFeature[]{SerializerFeature.WriteClassName}));
+                        kafkaTemplate.send(topicName, JSON.toJSONString(Collections.singletonList(JSON.parseObject(taskInfo, TaskInfo.class))
+                                , SerializerFeature.WriteClassName));
                     } catch (Exception e) {
                         log.error("nightShieldLazyJob send kafka fail! e:{},params:{}", Throwables.getStackTraceAsString(e), taskInfo);
                     }

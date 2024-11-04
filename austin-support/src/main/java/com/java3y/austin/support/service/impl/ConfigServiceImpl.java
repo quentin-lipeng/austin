@@ -1,6 +1,6 @@
 package com.java3y.austin.support.service.impl;
 
-import cn.hutool.core.util.StrUtil;
+import cn.hutool.core.text.StrPool;
 import cn.hutool.setting.dialect.Props;
 import com.ctrip.framework.apollo.Config;
 import com.java3y.austin.support.service.ConfigService;
@@ -23,7 +23,7 @@ public class ConfigServiceImpl implements ConfigService {
      * 本地配置
      */
     private static final String PROPERTIES_PATH = "local.properties";
-    private Props props = new Props(PROPERTIES_PATH, StandardCharsets.UTF_8);
+    private final Props PROPS = new Props(PROPERTIES_PATH, StandardCharsets.UTF_8);
 
     /**
      * apollo配置
@@ -43,13 +43,13 @@ public class ConfigServiceImpl implements ConfigService {
 
     @Override
     public String getProperty(String key, String defaultValue) {
-        if (enableApollo) {
-            Config config = com.ctrip.framework.apollo.ConfigService.getConfig(namespaces.split(StrUtil.COMMA)[0]);
+        if (Boolean.TRUE.equals(enableApollo)) {
+            Config config = com.ctrip.framework.apollo.ConfigService.getConfig(namespaces.split(StrPool.COMMA)[0]);
             return config.getProperty(key, defaultValue);
-        } else if (enableNacos) {
+        } else if (Boolean.TRUE.equals(enableNacos)) {
             return nacosUtils.getProperty(key, defaultValue);
         } else {
-            return props.getProperty(key, defaultValue);
+            return PROPS.getProperty(key, defaultValue);
         }
     }
 }

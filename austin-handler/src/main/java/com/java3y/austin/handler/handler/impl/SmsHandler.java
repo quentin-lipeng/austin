@@ -1,7 +1,7 @@
 package com.java3y.austin.handler.handler.impl;
 
 import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.util.StrUtil;
+import cn.hutool.core.text.CharSequenceUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.google.common.base.Throwables;
@@ -13,8 +13,9 @@ import com.java3y.austin.common.dto.model.SmsContentModel;
 import com.java3y.austin.common.enums.ChannelType;
 import com.java3y.austin.handler.domain.sms.MessageTypeSmsConfig;
 import com.java3y.austin.handler.domain.sms.SmsParam;
+import com.java3y.austin.handler.enums.LoadBalancerStrategy;
 import com.java3y.austin.handler.handler.BaseHandler;
-import com.java3y.austin.handler.handler.Handler;
+import com.java3y.austin.handler.loadbalance.ServiceLoadBalancerFactory;
 import com.java3y.austin.handler.script.SmsScript;
 import com.java3y.austin.support.dao.SmsRecordDao;
 import com.java3y.austin.support.domain.SmsRecord;
@@ -26,9 +27,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-import java.util.Random;
 
 /**
  * 短信发送处理
@@ -37,7 +37,7 @@ import java.util.Random;
  */
 @Component
 @Slf4j
-public class SmsHandler extends BaseHandler implements Handler {
+public class SmsHandler extends BaseHandler{
 
     /**
      * 流量自动分配策略
@@ -45,6 +45,12 @@ public class SmsHandler extends BaseHandler implements Handler {
     private static final Integer AUTO_FLOW_RULE = 0;
     private static final String FLOW_KEY = "msgTypeSmsConfig";
     private static final String FLOW_KEY_PREFIX = "message_type_";
+
+    /**
+     * 默认负载均衡为随机加权, 待拓展读取配置, 不同Handler可绑定不同的负载均衡策略
+     */
+    private static final String loadBalancerStrategy = LoadBalancerStrategy.SERVICE_LOAD_BALANCER_RANDOM_WEIGHT_ENHANCED;
+
     @Autowired
     private SmsRecordDao smsRecordDao;
     @Autowired
@@ -53,6 +59,8 @@ public class SmsHandler extends BaseHandler implements Handler {
     private ApplicationContext applicationContext;
     @Autowired
     private AccountUtils accountUtils;
+    @Autowired
+    private ServiceLoadBalancerFactory<MessageTypeSmsConfig> serviceLoadBalancer;
 
     public SmsHandler() {
         channelCode = ChannelType.SMS.getCode();
@@ -70,7 +78,7 @@ public class SmsHandler extends BaseHandler implements Handler {
              * 1、动态配置做流量负载
              * 2、发送短信
              */
-            MessageTypeSmsConfig[] messageTypeSmsConfigs = loadBalance(getMessageTypeSmsConfig(taskInfo));
+            List<MessageTypeSmsConfig> messageTypeSmsConfigs = serviceLoadBalancer.selectService(getMessageTypeSmsConfig(taskInfo), loadBalancerStrategy);
             for (MessageTypeSmsConfig messageTypeSmsConfig : messageTypeSmsConfigs) {
                 smsParam.setScriptName(messageTypeSmsConfig.getScriptName());
                 smsParam.setSendAccountId(messageTypeSmsConfig.getSendAccount());
@@ -84,42 +92,6 @@ public class SmsHandler extends BaseHandler implements Handler {
             log.error("SmsHandler#handler fail:{},params:{}", Throwables.getStackTraceAsString(e), JSON.toJSONString(smsParam));
         }
         return false;
-    }
-
-    /**
-     * 流量负载
-     * 根据配置的权重优先走某个账号，并取出一个备份的
-     *
-     * @param messageTypeSmsConfigs
-     */
-    private MessageTypeSmsConfig[] loadBalance(List<MessageTypeSmsConfig> messageTypeSmsConfigs) {
-
-        int total = 0;
-        for (MessageTypeSmsConfig channelConfig : messageTypeSmsConfigs) {
-            total += channelConfig.getWeights();
-        }
-
-        // 生成一个随机数[1,total]，看落到哪个区间
-        Random random = new Random();
-        int index = random.nextInt(total) + 1;
-
-        MessageTypeSmsConfig supplier = null;
-        MessageTypeSmsConfig supplierBack = null;
-        for (int i = 0; i < messageTypeSmsConfigs.size(); ++i) {
-            if (index <= messageTypeSmsConfigs.get(i).getWeights()) {
-                supplier = messageTypeSmsConfigs.get(i);
-
-                // 取下一个供应商
-                int j = (i + 1) % messageTypeSmsConfigs.size();
-                if (i == j) {
-                    return new MessageTypeSmsConfig[]{supplier};
-                }
-                supplierBack = messageTypeSmsConfigs.get(j);
-                return new MessageTypeSmsConfig[]{supplier, supplierBack};
-            }
-            index -= messageTypeSmsConfigs.get(i).getWeights();
-        }
-        return null;
     }
 
     /**
@@ -144,7 +116,7 @@ public class SmsHandler extends BaseHandler implements Handler {
          */
         if (!taskInfo.getSendAccount().equals(AUTO_FLOW_RULE)) {
             SmsAccount account = accountUtils.getAccountById(taskInfo.getSendAccount(), SmsAccount.class);
-            return Arrays.asList(MessageTypeSmsConfig.builder().sendAccount(taskInfo.getSendAccount()).scriptName(account.getScriptName()).weights(100).build());
+            return Collections.singletonList(MessageTypeSmsConfig.builder().sendAccount(taskInfo.getSendAccount()).scriptName(account.getScriptName()).weights(100).build());
         }
 
         /**
@@ -169,13 +141,18 @@ public class SmsHandler extends BaseHandler implements Handler {
      */
     private String getSmsContent(TaskInfo taskInfo) {
         SmsContentModel smsContentModel = (SmsContentModel) taskInfo.getContentModel();
-        if (StrUtil.isNotBlank(smsContentModel.getUrl())) {
-            return smsContentModel.getContent() + StrUtil.SPACE + smsContentModel.getUrl();
+        if (CharSequenceUtil.isNotBlank(smsContentModel.getUrl())) {
+            return smsContentModel.getContent() + CharSequenceUtil.SPACE + smsContentModel.getUrl();
         } else {
             return smsContentModel.getContent();
         }
     }
 
+    /**
+     * 短信不支持撤回
+     * 腾讯云文档 eg：https://cloud.tencent.com/document/product/382/52077
+     * @param recallTaskInfo
+     */
     @Override
     public void recall(RecallTaskInfo recallTaskInfo) {
 

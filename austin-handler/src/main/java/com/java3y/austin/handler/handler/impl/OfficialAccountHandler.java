@@ -9,7 +9,6 @@ import com.java3y.austin.common.domain.TaskInfo;
 import com.java3y.austin.common.dto.model.OfficialAccountsContentModel;
 import com.java3y.austin.common.enums.ChannelType;
 import com.java3y.austin.handler.handler.BaseHandler;
-import com.java3y.austin.handler.handler.Handler;
 import com.java3y.austin.support.utils.AccountUtils;
 import com.java3y.austin.support.utils.LogUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -28,10 +27,11 @@ import java.util.Set;
 /**
  * @author zyg
  * 微信服务号推送处理
+ * https://developers.weixin.qq.com/doc/offiaccount/Subscription_Messages/api.html
  */
 @Component
 @Slf4j
-public class OfficialAccountHandler extends BaseHandler implements Handler {
+public class OfficialAccountHandler extends BaseHandler{
 
     @Autowired
     private AccountUtils accountUtils;
@@ -63,6 +63,8 @@ public class OfficialAccountHandler extends BaseHandler implements Handler {
 
     /**
      * 组装发送模板信息参数
+     * @param receiver 接收信息者
+     * @param contentModel 消息下发参数
      */
     private WxMpTemplateMessage assembleReq(Set<String> receiver, OfficialAccountsContentModel contentModel) {
         return WxMpTemplateMessage.builder()
@@ -76,7 +78,7 @@ public class OfficialAccountHandler extends BaseHandler implements Handler {
 
     /**
      * 构建模板消息参数
-     *
+     * @param data 模板参数
      * @return
      */
     private List<WxMpTemplateData> getWxMpTemplateData(Map<String, String> data) {
@@ -86,6 +88,11 @@ public class OfficialAccountHandler extends BaseHandler implements Handler {
     }
 
 
+    /**
+     * 微信服务号消息 不支持撤回
+     * https://developers.weixin.qq.com/doc/offiaccount/Subscription_Messages/api.html
+     * @param recallTaskInfo
+     */
     @Override
     public void recall(RecallTaskInfo recallTaskInfo) {
 

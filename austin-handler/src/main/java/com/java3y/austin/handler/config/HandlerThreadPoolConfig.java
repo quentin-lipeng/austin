@@ -15,7 +15,11 @@ import java.util.concurrent.TimeUnit;
  */
 public class HandlerThreadPoolConfig {
 
-    private static final String PRE_FIX = "austin.";
+    public static final String PRE_FIX = "austin.";
+
+    private HandlerThreadPoolConfig() {
+
+    }
 
     /**
      * 业务：处理某个渠道的某种类型消息的线程池

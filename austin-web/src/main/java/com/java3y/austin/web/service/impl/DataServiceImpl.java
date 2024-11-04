@@ -4,8 +4,8 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.map.MapUtil;
+import cn.hutool.core.text.CharSequenceUtil;
 import cn.hutool.core.text.StrPool;
-import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.java3y.austin.common.constant.AustinConstant;
 import com.java3y.austin.common.domain.SimpleAnchorInfo;
@@ -71,7 +71,7 @@ public class DataServiceImpl implements DataService {
         }
 
         // 0. 按时间排序
-        List<SimpleAnchorInfo> sortAnchorList = userInfoList.stream().map(s -> JSON.parseObject(s, SimpleAnchorInfo.class)).sorted((o1, o2) -> Math.toIntExact(o1.getTimestamp() - o2.getTimestamp())).collect(Collectors.toList());
+        List<SimpleAnchorInfo> sortAnchorList = userInfoList.stream().map(s -> JSON.parseObject(s, SimpleAnchorInfo.class)).sorted(Comparator.comparing(SimpleAnchorInfo::getTimestamp).reversed()).collect(Collectors.toList());
         return buildUserTimeLineVo(sortAnchorList);
     }
 
@@ -101,10 +101,10 @@ public class DataServiceImpl implements DataService {
         Integer sendDate = Integer.valueOf(DateUtil.format(new Date(dataParam.getDateTime() * 1000L), DatePattern.PURE_DATE_PATTERN));
         List<SmsRecord> smsRecordList = smsRecordDao.findByPhoneAndSendDate(Long.valueOf(dataParam.getReceiver()), sendDate);
         if (CollUtil.isEmpty(smsRecordList)) {
-            return SmsTimeLineVo.builder().items(Arrays.asList(SmsTimeLineVo.ItemsVO.builder().build())).build();
+            return SmsTimeLineVo.builder().items(Collections.singletonList(SmsTimeLineVo.ItemsVO.builder().build())).build();
         }
 
-        Map<String, List<SmsRecord>> maps = smsRecordList.stream().collect(Collectors.groupingBy((o) -> o.getPhone() + o.getSeriesId()));
+        Map<String, List<SmsRecord>> maps = smsRecordList.stream().collect(Collectors.groupingBy(o -> o.getPhone() + o.getSeriesId()));
         return Convert4Amis.getSmsTimeLineVo(maps);
     }
 
@@ -158,7 +158,7 @@ public class DataServiceImpl implements DataService {
             }
 
             for (String detail : sb.toString().split(StrPool.CRLF)) {
-                if (StrUtil.isNotBlank(detail)) {
+                if (CharSequenceUtil.isNotBlank(detail)) {
                     UserTimeLineVo.ItemsVO itemsVO = UserTimeLineVo.ItemsVO.builder()
                             .businessId(entry.getKey())
                             .sendType(EnumUtil.getEnumByCode(messageTemplate.getSendChannel(), ChannelType.class).getDescription())

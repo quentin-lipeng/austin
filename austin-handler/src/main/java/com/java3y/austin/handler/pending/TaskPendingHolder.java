@@ -1,5 +1,6 @@
 package com.java3y.austin.handler.pending;
 
+import com.dtp.core.DtpRegistry;
 import com.dtp.core.thread.DtpExecutor;
 import com.java3y.austin.handler.config.HandlerThreadPoolConfig;
 import com.java3y.austin.handler.utils.GroupIdMappingUtils;
@@ -27,7 +28,6 @@ public class TaskPendingHolder {
     private static List<String> groupIds = GroupIdMappingUtils.getAllGroupIds();
     @Autowired
     private ThreadPoolUtils threadPoolUtils;
-    private Map<String, ExecutorService> taskPendingHolder = new HashMap<>(32);
 
     /**
      * 给每个渠道，每种消息类型初始化一个线程池
@@ -42,8 +42,6 @@ public class TaskPendingHolder {
         for (String groupId : groupIds) {
             DtpExecutor executor = HandlerThreadPoolConfig.getExecutor(groupId);
             threadPoolUtils.register(executor);
-
-            taskPendingHolder.put(groupId, executor);
         }
     }
 
@@ -54,7 +52,7 @@ public class TaskPendingHolder {
      * @return
      */
     public ExecutorService route(String groupId) {
-        return taskPendingHolder.get(groupId);
+        return DtpRegistry.getExecutor(HandlerThreadPoolConfig.PRE_FIX + groupId);
     }
 
 

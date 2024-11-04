@@ -23,6 +23,8 @@ public class CronAsyncThreadPoolConfig {
      */
     public static final String EXECUTE_XXL_THREAD_POOL_NAME = "execute-xxl-thread-pool";
 
+    private CronAsyncThreadPoolConfig() {
+    }
 
     /**
      * 业务：消费pending队列实际的线程池
@@ -35,7 +37,7 @@ public class CronAsyncThreadPoolConfig {
         return ExecutorBuilder.create()
                 .setCorePoolSize(ThreadPoolConstant.COMMON_CORE_POOL_SIZE)
                 .setMaxPoolSize(ThreadPoolConstant.COMMON_MAX_POOL_SIZE)
-                .setWorkQueue(new LinkedBlockingQueue(ThreadPoolConstant.BIG_QUEUE_SIZE))
+                .setWorkQueue(new LinkedBlockingQueue<>(ThreadPoolConstant.BIG_QUEUE_SIZE))
                 .setHandler(new ThreadPoolExecutor.CallerRunsPolicy())
                 .setAllowCoreThreadTimeOut(true)
                 .setKeepAliveTime(ThreadPoolConstant.SMALL_KEEP_LIVE_TIME, TimeUnit.SECONDS)

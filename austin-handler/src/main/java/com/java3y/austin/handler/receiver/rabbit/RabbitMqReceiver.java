@@ -3,6 +3,7 @@ package com.java3y.austin.handler.receiver.rabbit;
 import com.alibaba.fastjson.JSON;
 import com.java3y.austin.common.domain.RecallTaskInfo;
 import com.java3y.austin.common.domain.TaskInfo;
+import com.java3y.austin.handler.receiver.MessageReceiver;
 import com.java3y.austin.handler.receiver.service.ConsumeService;
 import com.java3y.austin.support.constans.MessageQueuePipeline;
 import org.apache.commons.lang3.StringUtils;
@@ -16,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 
@@ -25,7 +27,7 @@ import java.util.List;
  */
 @Component
 @ConditionalOnProperty(name = "austin.mq.pipeline", havingValue = MessageQueuePipeline.RABBIT_MQ)
-public class RabbitMqReceiver {
+public class RabbitMqReceiver implements MessageReceiver {
 
     private static final String MSG_TYPE_SEND = "send";
     private static final String MSG_TYPE_RECALL = "recall";
@@ -41,7 +43,7 @@ public class RabbitMqReceiver {
     public void onMessage(Message message) {
         String messageType = message.getMessageProperties().getHeader("messageType");
         byte[] body = message.getBody();
-        String messageContent = new String(body);
+        String messageContent = new String(body, StandardCharsets.UTF_8);
         if (StringUtils.isBlank(messageContent)) {
             return;
         }

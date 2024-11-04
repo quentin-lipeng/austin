@@ -22,22 +22,20 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 public class ExceptionHandlerAdvice {
     private static final Logger log = LoggerFactory.getLogger(ExceptionHandlerAdvice.class);
 
-    public ExceptionHandlerAdvice() {
-    }
 
     @ExceptionHandler({Exception.class})
     @ResponseStatus(HttpStatus.OK)
-    public BasicResultVO exceptionResponse(Exception e) {
-        BasicResultVO result = BasicResultVO.fail(RespStatusEnum.ERROR_500, "\r\n" + Throwables.getStackTrace(e) + "\r\n");
-        log.error(Throwables.getStackTrace(e));
-        return result;
+    public BasicResultVO<String> exceptionResponse(Exception e) {
+        String errStackStr = Throwables.getStackTrace(e);
+        log.error(errStackStr);
+        return BasicResultVO.fail(RespStatusEnum.ERROR_500, "\r\n" + errStackStr + "\r\n");
     }
 
     @ExceptionHandler({CommonException.class})
     @ResponseStatus(HttpStatus.OK)
-    public BasicResultVO commonResponse(CommonException ce) {
+    public BasicResultVO<RespStatusEnum> commonResponse(CommonException ce) {
         log.error(Throwables.getStackTrace(ce));
-        return new BasicResultVO(ce.getCode(), ce.getMessage(), ce.getRespStatusEnum());
+        return new BasicResultVO<>(ce.getCode(), ce.getMessage(), ce.getRespStatusEnum());
     }
 }
 
